@@ -2,7 +2,6 @@ from __future__ import annotations
 import typer
 from rich import print
 from dotenv import load_dotenv
-import pandas as pd
 
 from src.config import get_paths, fred_key
 from src.ingest_mlr import download_mlr_zips, build_mlr_panel
