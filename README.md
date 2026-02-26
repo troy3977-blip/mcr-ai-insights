@@ -33,39 +33,48 @@ CMS MLR ZIP Archives (2017--Present) │ ▼ Extract + Normalize Raw CSVs │ �
 
 mcr-ai-insights/
 │
-├──\src/                     # Core application logic
+├── src/                         # Core application logic
 │   │
-│   ├── cli.py               # Typer-based CLI entrypoint
-│   │                         # Orchestrates end-to-end pipeline execution
+│   ├── cli.py                   # Typer-based CLI entrypoint
+│   │                             # Orchestrates end-to-end pipeline execution
 │   │
-│   ├── ingest_mlr.py        # CMS MLR ZIP extraction & normalization
-│   │                         # Builds canonical issuer-state-market-year panel
+│   ├── ingest_mlr.py            # CMS MLR ZIP extraction & normalization
+│   │                             # Builds canonical issuer-state-market-year panel
 │   │
-│   ├── ingest_fred.py       # CPI / PPI inflation ingestion (FRED API)
-│   │                         # Produces inflation normalization layer
+│   ├── ingest_fred.py           # CPI / PPI inflation ingestion (FRED API)
+│   │                             # Produces inflation normalization layer
 │   │
-│   ├── build_panel.py       # Deterministic feature engineering
-│   │                         # Audit filtering + derived metrics
+│   ├── build_panel.py           # Deterministic feature engineering
+│   │                             # Audit filtering + derived metrics
 │   │
-│   ├── export_panel.py      # Model-ready artifact generation
-│   │                         # Stable subsets + weight-ready exports
+│   ├── export_panel.py          # Model-ready artifact generation
+│   │                             # Stable subsets + weight-ready exports
 │   │
-│   └── config.py            # Centralized configuration management
-│                             # Paths, environment variables, API keys
+│   └── config.py                # Centralized configuration management
+│                                 # Paths, environment variables, API keys
 │
-├── \data/
+├── data/
 │   │
-│   ├── raw/                 # Immutable source inputs (gitignored)
-│   │                         # CMS ZIP downloads
+│   ├── raw/                     # Immutable source inputs (gitignored)
+│   │                             # CMS ZIP downloads
 │   │
-│   └── processed/           # Versioned analytical outputs
-│                             # Parquet artifacts for modeling
+│   └── processed/               # Versioned analytical outputs
+│                                 # Parquet artifacts for modeling
 │
-├── .env                     # Optional runtime configuration (gitignored)
-│                             # FRED_API_KEY and local overrides
+├── .env                         # Optional runtime configuration (gitignored)
+│                                 # FRED_API_KEY and local overrides
 │
-├── requirements.txt         # Explicit dependency lock
-└── README.md                # Project documentation
+├── requirements.txt             # Explicit dependency specification
+└── README.md                    # Project documentation
+
+| Layer          | Module            | Responsibility                    |
+| -------------- | ----------------- | --------------------------------- |
+| Interface      | `cli.py`          | Orchestration & execution control |
+| Ingestion      | `ingest_mlr.py`   | Raw CMS normalization             |
+| Macroeconomic  | `ingest_fred.py`  | Inflation index acquisition       |
+| Transformation | `build_panel.py`  | Feature engineering + audit logic |
+| Export         | `export_panel.py` | Model-ready artifact generation   |
+| Configuration  | `config.py`       | Environment + runtime settings    |
 
 ## 🚀 Quick Start ##
 
