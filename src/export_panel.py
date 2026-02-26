@@ -1,4 +1,4 @@
-# src/export_panel.py
+# src/export_panel.py - create model-ready artifacts from data/processed/panel.parquet:
 from __future__ import annotations
 
 from dataclasses import dataclass
