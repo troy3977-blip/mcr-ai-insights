@@ -99,25 +99,32 @@ FRED_API_KEY=your_key_here
 
 3️⃣ Build Panel
 Single year:
-python -m src.cli --start-year 2017 --end-year 2017 --diagnostics
+
+- python -m src.cli --start-year 2017 --end-year 2017 --diagnostics
 
 Full range:
-python -m src.cli --start-year 2017 --end-year 2024
+
+- python -m src.cli --start-year 2017 --end-year 2024
 
 Skip inflation:
-python -m src.cli --no-inflation
+
+- python -m src.cli --no-inflation
 
 Output:
-data/processed/panel.parquet
 
-4️⃣ Export Model Artifacts
-python -m src.cli export --min-years 3 --w-cap 10
+- data/processed/panel.parquet
+
+4️⃣ Export Model Artifacts:
+
+- python -m src.cli export --min-years 3 --w-cap 10
 
 Outputs:
-panel_model.parquet
-panel_stable.parquet
 
-🔍 Audit & Data Controls
+- panel_model.parquet
+- panel_stable.parquet
+
+## 🔍 Audit & Data Controls ##
+
 During panel construction, automated audits flag and filter:
 
 | Check                      | Purpose                |
@@ -129,10 +136,11 @@ During panel construction, automated audits flag and filter:
 | Raw MCR > 5                | Extreme data artifacts |
 
 Example audit output:
-input rows: 10,504
-rows w/ incurred_claims < 0: 1,217
-rows w/ raw mcr > 5.0: 410
-Post-filter rows: 10,001
+
+- input rows: 10,504
+- rows w/ incurred_claims < 0: 1,217
+- rows w/ raw mcr > 5.0: 410
+- Post-filter rows: 10,001
 
 ## 📊 Feature Engineering ##
 
@@ -150,11 +158,13 @@ Final panel includes:
 
 ## 🧮 Weighting Strategy ##
 
-Global Premium Weight
-w = earned_premium / global_median
+Global Premium Weight:
 
-Year-Relative Weight
-premium_weight_year = earned_premium / median(earned_premium within year)
+- w = earned_premium / global_median
+
+Year-Relative Weight:
+
+- premium_weight_year = earned_premium / median(earned_premium within year)
 
 Ensures:
 
