@@ -167,7 +167,7 @@ Ensures:
 
 Stable subset includes issuer-state-market groups with:
 
-- >= min_years distinct years
+- '>=' min_years distinct years
 - Default: 3 years
 
 Output:
@@ -196,8 +196,9 @@ Options:
 | `--include-large-group` | Include Large Group market |
 | `--no-inflation`        | Skip FRED CPI/PPI          |
 
-Export Model Artifacts
-python -m src.cli export
+Export Model Artifacts:
+
+- python -m src.cli export
 
 Options:
 
@@ -218,12 +219,13 @@ CMS MLR PUF data is:
 - Not analysis-ready
 
 This project transforms it into:
-✔ Clean
-✔ Audited
-✔ Weighted
-✔ Inflation-adjusted
-✔ Panel-structured
-✔ Modeling-ready
+
+- ✔ Clean
+- ✔ Audited
+- ✔ Weighted
+- ✔ Inflation-adjusted
+- ✔ Panel-structured
+- ✔ Modeling-ready
 
 ## 📈 Example Use Cases ##
 
@@ -236,10 +238,10 @@ This project transforms it into:
 
 ## 🔐 Data Handling ##
 
-Raw ZIP files not committed
-Parquet artifacts ignored in git
-.env excluded
-Designed for Azure / container deployment
+- Raw ZIP files not committed
+- Parquet artifacts ignored in git
+- .env excluded
+- Designed for Azure / container deployment
 
 ## 🛠 Production Design Principles ##
 
