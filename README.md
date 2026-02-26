@@ -27,34 +27,13 @@ It solves common MLR PUF challenges:
 
 ## 🧱 Architecture ##
 
-CMS MLR ZIP Archives (2017–Present)
-        │
-        ▼
-Extract + Normalize Raw CSVs
-        │
-        ▼
-Fact Table: Part1_2_Summary_Data_Premium_Claims.csv
-        │
-        ▼
-Header Dimensions: MR_Submission_Template_Header.csv
-        │
-        ▼
-Issuer–State–Market–Year Analytical Panel
-        │
-        ▼
-Inflation Merge (FRED CPI / PPI)
-        │
-        ▼
-Feature Engineering + Audit Filtering
-        │
-        ▼
-Model-Ready Artifacts (Parquet / CSV / Feature Store)
+CMS MLR ZIP Archives (2017--Present) │ ▼ Extract + Normalize Raw CSVs │ ▼ Fact Table: Part1_2_Summary_Data_Premium_Claims.csv │ ▼ Header Dimensions: MR_Submission_Template_Header.csv │ ▼ Issuer--State--Market--Year Analytical Panel │ ▼ Inflation Merge (FRED CPI / PPI) │ ▼ Feature Engineering + Audit Filtering │ ▼ Model-Ready Artifacts (Parquet / CSV / Feature Store)
 
 ## 📂 Project Structure ##
 
 mcr-ai-insights/
 │
-├── src/                     # Core application logic
+├──\src/                     # Core application logic
 │   │
 │   ├── cli.py               # Typer-based CLI entrypoint
 │   │                         # Orchestrates end-to-end pipeline execution
@@ -74,7 +53,7 @@ mcr-ai-insights/
 │   └── config.py            # Centralized configuration management
 │                             # Paths, environment variables, API keys
 │
-├── data/
+├── \data/
 │   │
 │   ├── raw/                 # Immutable source inputs (gitignored)
 │   │                         # CMS ZIP downloads
