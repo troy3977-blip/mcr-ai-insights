@@ -1,3 +1,4 @@
+# src/build_panel.py - Build the MLR panel dataset with diagnostics and feature engineering.
 from __future__ import annotations
 
 import numpy as np
