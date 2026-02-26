@@ -1,3 +1,4 @@
+# src/cli.py - Command-line interface for building and exporting the MLR panel dataset.
 from __future__ import annotations
 
 from dotenv import load_dotenv

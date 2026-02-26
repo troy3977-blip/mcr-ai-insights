@@ -1,4 +1,4 @@
-# src/ingest_mlr.py
+# src/ingest_mlr.py - Ingest CMS Medical Loss Ratio (MLR) public use files into a single panel.
 from __future__ import annotations
 
 import re
