@@ -27,39 +27,66 @@ It solves common MLR PUF challenges:
 
 ## 🧱 Architecture ##
 
-CMS MLR ZIPs (2017–Present)
-        ↓
-Fact Table (Part1_2_Summary_Data_Premium_Claims.csv)
-        ↓
-Header Dims (MR_Submission_Template_Header.csv)
-        ↓
-Issuer-State-Market-Year Panel
-        ↓
-Inflation Merge (FRED CPI/PPI)
-        ↓
+CMS MLR ZIP Archives (2017–Present)
+        │
+        ▼
+Extract + Normalize Raw CSVs
+        │
+        ▼
+Fact Table: Part1_2_Summary_Data_Premium_Claims.csv
+        │
+        ▼
+Header Dimensions: MR_Submission_Template_Header.csv
+        │
+        ▼
+Issuer–State–Market–Year Analytical Panel
+        │
+        ▼
+Inflation Merge (FRED CPI / PPI)
+        │
+        ▼
 Feature Engineering + Audit Filtering
-        ↓
-Model-Ready Artifacts
+        │
+        ▼
+Model-Ready Artifacts (Parquet / CSV / Feature Store)
 
 ## 📂 Project Structure ##
 
 mcr-ai-insights/
 │
-├── src/
-│   ├── cli.py                # Typer CLI entrypoint
-│   ├── ingest_mlr.py         # CMS ZIP parsing & panel construction
-│   ├── ingest_fred.py        # CPI/PPI inflation ingestion
-│   ├── build_panel.py        # Feature engineering + audit filters
-│   ├── export_panel.py       # Model-weight exports + stable subset
-│   └── config.py             # Path + FRED key configuration
+├── src/                     # Core application logic
+│   │
+│   ├── cli.py               # Typer-based CLI entrypoint
+│   │                         # Orchestrates end-to-end pipeline execution
+│   │
+│   ├── ingest_mlr.py        # CMS MLR ZIP extraction & normalization
+│   │                         # Builds canonical issuer-state-market-year panel
+│   │
+│   ├── ingest_fred.py       # CPI / PPI inflation ingestion (FRED API)
+│   │                         # Produces inflation normalization layer
+│   │
+│   ├── build_panel.py       # Deterministic feature engineering
+│   │                         # Audit filtering + derived metrics
+│   │
+│   ├── export_panel.py      # Model-ready artifact generation
+│   │                         # Stable subsets + weight-ready exports
+│   │
+│   └── config.py            # Centralized configuration management
+│                             # Paths, environment variables, API keys
 │
 ├── data/
-│   ├── raw/                  # CMS ZIP downloads (ignored in git)
-│   └── processed/            # Output parquet artifacts
+│   │
+│   ├── raw/                 # Immutable source inputs (gitignored)
+│   │                         # CMS ZIP downloads
+│   │
+│   └── processed/           # Versioned analytical outputs
+│                             # Parquet artifacts for modeling
 │
-├── .env                      # Optional FRED_API_KEY (ignored)
-├── requirements.txt
-└── README.md
+├── .env                     # Optional runtime configuration (gitignored)
+│                             # FRED_API_KEY and local overrides
+│
+├── requirements.txt         # Explicit dependency lock
+└── README.md                # Project documentation
 
 ## 🚀 Quick Start ##
 
@@ -140,11 +167,12 @@ Ensures:
 
 Stable subset includes issuer-state-market groups with:
 
->= min_years distinct years
-Default: 3 years
+- >= min_years distinct years
+- Default: 3 years
 
 Output:
-panel_stable.parquet
+
+- panel_stable.parquet
 
 Designed for:
 
@@ -154,8 +182,9 @@ Designed for:
 
 ## ⚙️ CLI Commands ##
 
-Build Panel
-python -m src.cli [OPTIONS]
+Build Panel:
+
+- python -m src.cli [OPTIONS]
 
 Options:
 
@@ -198,12 +227,12 @@ This project transforms it into:
 
 ## 📈 Example Use Cases ##
 
-✔ Insurer-level MCR forecasting
-✔ Risk corridor / rebate modeling
-✔ Market concentration analysis
-✔ Premium growth normalization
-✔ Inflation-adjusted profitability modeling
-✔ Actuarial panel regressions
+- ✔ Insurer-level MCR forecasting
+- ✔ Risk corridor / rebate modeling
+- ✔ Market concentration analysis
+- ✔ Premium growth normalization
+- ✔ Inflation-adjusted profitability modeling
+- ✔ Actuarial panel regressions
 
 ## 🔐 Data Handling ##
 
