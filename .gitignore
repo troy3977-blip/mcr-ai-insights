@@ -1,11 +1,10 @@
+cat >> .gitignore << 'EOF'
 # data artifacts
 data/
-data_processed/
+data/raw/
+data/data_processed/
 *.parquet
 *.zip
-
-# env
-.env
 
 # python
 __pycache__/
@@ -15,3 +14,7 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 .venv/
+
+# secrets
+.env
+EOF

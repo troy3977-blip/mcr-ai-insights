@@ -1,68 +1,98 @@
+# src/export_panel.py
 from __future__ import annotations
+
+from dataclasses import dataclass
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 
 
-def add_premium_weights(
-    df: pd.DataFrame,
-    premium_col: str = "earned_premium",
+@dataclass(frozen=True)
+class ExportPaths:
+    processed_dir: Path
+    input_name: str = "panel.parquet"
+
+    @property
+    def input_path(self) -> Path:
+        return self.processed_dir / self.input_name
+
+    @property
+    def model_path(self) -> Path:
+        return self.processed_dir / "panel_model.parquet"
+
+    @property
+    def stable_path(self) -> Path:
+        return self.processed_dir / "panel_stable.parquet"
+
+
+def _safe_median(x: pd.Series) -> float:
+    x2 = pd.to_numeric(x, errors="coerce")
+    m = float(x2.median(skipna=True))
+    return m if np.isfinite(m) and m > 0 else 1.0
+
+
+def export_panel(
+    processed_dir: Path,
     *,
-    year_col: str = "year",
-    w_cap: float = 10.0,
-) -> pd.DataFrame:
-    out = df.copy()
-    prem = pd.to_numeric(out[premium_col], errors="coerce").astype(float)
-
-    # global weights
-    med = float(np.nanmedian(prem.values)) if len(prem) else np.nan
-    if not np.isfinite(med) or med <= 0:
-        out["premium_weight"] = 1.0
-        out["w"] = 1.0
-    else:
-        out["premium_weight"] = (prem / med).replace([np.inf, -np.inf], np.nan).fillna(0.0)
-        out["w"] = out["premium_weight"].clip(lower=0.0, upper=float(w_cap))
-
-    # year-relative weights
-    if year_col in out.columns:
-        yrs = pd.to_numeric(out[year_col], errors="coerce").astype("Int64")
-        out[year_col] = yrs
-
-        year_medians = (
-            pd.DataFrame({year_col: yrs, "_prem": prem})
-            .dropna(subset=[year_col, "_prem"])
-            .groupby(year_col, as_index=False)["_prem"]
-            .median()
-            .rename(columns={"_prem": "_prem_med_year"})
-        )
-        out = out.merge(year_medians, on=year_col, how="left")
-        denom = pd.to_numeric(out["_prem_med_year"], errors="coerce").astype(float)
-
-        out["premium_weight_year"] = (prem / denom).replace([np.inf, -np.inf], np.nan).fillna(0.0)
-        out["w_year"] = out["premium_weight_year"].clip(lower=0.0, upper=float(w_cap))
-        out = out.drop(columns=["_prem_med_year"])
-    else:
-        out["premium_weight_year"] = out["premium_weight"]
-        out["w_year"] = out["w"]
-
-    return out
-
-
-def filter_stable_panel(
-    df: pd.DataFrame,
-    *,
-    key_cols: tuple[str, str, str] = ("issuer_id", "state", "market"),
-    year_col: str = "year",
+    input_name: str = "panel.parquet",
     min_years: int = 3,
-) -> pd.DataFrame:
-    out = df.copy()
-    out[year_col] = pd.to_numeric(out[year_col], errors="coerce").astype("Int64")
+    w_cap: float = 10.0,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Create model-ready artifacts from data/processed/panel.parquet:
+      - panel_model.parquet: adds premium-based weights (global + year-relative)
+      - panel_stable.parquet: subset of issuer/state/market with >= min_years distinct years
+    """
+    paths = ExportPaths(processed_dir=processed_dir, input_name=input_name)
 
-    counts = (
-        out.dropna(subset=[year_col])
-        .groupby(list(key_cols), as_index=False)[year_col]
-        .nunique()
-        .rename(columns={year_col: "n_years"})
+    if not paths.input_path.exists():
+        raise FileNotFoundError(f"Missing input parquet: {paths.input_path}")
+
+    df = pd.read_parquet(paths.input_path)
+
+    required = {"issuer_id", "state", "market", "year", "earned_premium", "mcr"}
+    missing = required - set(df.columns)
+    if missing:
+        raise ValueError(f"Input panel missing columns: {sorted(missing)}")
+
+    out = df.copy()
+
+    # -----------------------------
+    # 1) Global premium weight (w)
+    # -----------------------------
+    prem = pd.to_numeric(out["earned_premium"], errors="coerce").replace([np.inf, -np.inf], np.nan)
+    global_med = _safe_median(prem)
+    out["premium_weight"] = prem / global_med
+    out["w"] = out["premium_weight"].clip(lower=0.0, upper=float(w_cap))
+
+    # ----------------------------------------
+    # 2) Year-relative premium weight (w_year)
+    # median(premium_weight_year) per year ~= 1
+    # ----------------------------------------
+    out["year"] = pd.to_numeric(out["year"], errors="coerce").astype("Int64")
+
+    year_meds = (
+        out.groupby("year", dropna=False)["earned_premium"]
+        .apply(_safe_median)
+        .rename("year_median_premium")
+        .reset_index()
     )
-    out = out.merge(counts, on=list(key_cols), how="left")
-    out = out[out["n_years"].fillna(0).astype(int) >= int(min_years)].copy()
-    return out.drop(columns=["n_years"])
+    out = out.merge(year_meds, on="year", how="left")
+    out["premium_weight_year"] = prem / out["year_median_premium"].replace({0.0: 1.0})
+    out["w_year"] = out["premium_weight_year"].clip(lower=0.0, upper=float(w_cap))
+
+    # ----------------------------------------
+    # 3) Stable subset (min distinct years)
+    # ----------------------------------------
+    grp = out.groupby(["issuer_id", "state", "market"], dropna=False)
+    years_n = grp["year"].nunique().rename("n_years").reset_index()
+    out2 = out.merge(years_n, on=["issuer_id", "state", "market"], how="left")
+    stable = out2[out2["n_years"] >= int(min_years)].copy()
+
+    # Write artifacts
+    paths.processed_dir.mkdir(parents=True, exist_ok=True)
+    out2.to_parquet(paths.model_path, index=False)
+    stable.to_parquet(paths.stable_path, index=False)
+
+    return out2, stable
