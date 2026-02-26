@@ -1,7 +1,9 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
 from pathlib import Path
 import os
+
 
 @dataclass(frozen=True)
 class Paths:
@@ -9,16 +11,18 @@ class Paths:
     raw: Path
     processed: Path
 
-def get_paths() -> Paths:
-    root = Path(__file__).resolve().parents[1]
-    raw = root / "data_raw"
-    processed = root / "data_processed"
-    raw.mkdir(exist_ok=True, parents=True)
-    processed.mkdir(exist_ok=True, parents=True)
-    return Paths(root=root, raw=raw, processed=processed)
+
+def get_paths(root: str | Path = ".") -> Paths:
+    r = Path(root).resolve()
+    raw = r / "data" / "raw"
+    processed = r / "data" / "processed"
+    raw.mkdir(parents=True, exist_ok=True)
+    processed.mkdir(parents=True, exist_ok=True)
+    return Paths(root=r, raw=raw, processed=processed)
+
 
 def fred_key() -> str:
-    key = os.getenv("FRED_API_KEY")
+    key = os.getenv("FRED_API_KEY", "").strip()
     if not key:
-        raise RuntimeError("Missing FRED_API_KEY. Put it in .env or export it.")
+        raise RuntimeError("Missing FRED_API_KEY. Put it in .env or your environment.")
     return key

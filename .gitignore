@@ -1,4 +1,17 @@
-.venv/
-__pycache__/
+# data artifacts
+data/
+data_processed/
+*.parquet
+*.zip
+
+# env
 .env
-data_raw/
+
+# python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.ruff_cache/
+.venv/
