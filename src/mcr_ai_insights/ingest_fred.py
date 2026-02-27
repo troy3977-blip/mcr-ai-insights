@@ -1,6 +1,7 @@
 from __future__ import annotations
-import requests
+
 import pandas as pd
+import requests
 
 FRED_OBS = "https://api.stlouisfed.org/fred/series/observations"
 

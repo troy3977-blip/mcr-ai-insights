@@ -4,9 +4,8 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from .quality import require_columns, basic_mcr_checks
 from .mcr import compute_mcr
-
+from .quality import basic_mcr_checks, require_columns
 
 # ---------------------------------------------------------------------
 # Diagnostics

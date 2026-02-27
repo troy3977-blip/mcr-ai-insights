@@ -4,7 +4,6 @@ from __future__ import annotations
 import re
 import zipfile
 from pathlib import Path
-from typing import Iterable
 
 import pandas as pd
 import requests

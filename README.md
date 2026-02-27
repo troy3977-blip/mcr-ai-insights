@@ -85,7 +85,7 @@ Requires Python 3.10+.
 
 ## 6️⃣ Usage Examples
 
-**1. Subsidy Expansion or Reduction**
+1)Subsidy Expansion or Reduction
 
 Changes to premium tax credits (e.g., ARPA enhancements or sunset scenarios) may alter enrollment composition and average risk levels.  
 Using the issuer-level MCR panel, analysts can:
@@ -94,7 +94,7 @@ Using the issuer-level MCR panel, analysts can:
 - Evaluate changes in premium growth relative to claims growth
 - Identify state-level heterogeneity in impact
 
-**2. Medical Loss Ratio (MLR) Rebate Rule Adjustments**
+2)Medical Loss Ratio (MLR) Rebate Rule Adjustments
 
 If regulatory thresholds or rebate calculations change, insurers may alter pricing or benefit design strategies.  
 This dataset enables:
@@ -103,7 +103,7 @@ This dataset enables:
 - Identification of issuers operating near regulatory thresholds
 - Sensitivity modeling under alternate MCR caps
 
-**3. Risk Adjustment or Market Stabilization Policy Changes**
+3)Risk Adjustment or Market Stabilization Policy Changes
 
 Modifications to risk corridors, reinsurance programs, or adjustment formulas affect claims volatility and pricing adequacy.  
 The stable panel output supports:
@@ -112,7 +112,7 @@ The stable panel output supports:
 - Variance and volatility modeling
 - Cross-state structural comparisons
 
-### 6️⃣ Usage
+## 6️⃣ Usage
 
 ```markdown
 
@@ -147,7 +147,7 @@ Wrote: data/processed/panel.parquet rows=10,001
 
 ## 8️⃣ Testing and CI
 
-## Quality Controls
+# Quality Controls
 
 - Ruff linting & formatting
 - Pytest validation of MCR logic and panel schema
@@ -162,9 +162,8 @@ pytest -q
 
 ---
 
-## 9️⃣ Why This Matters (Positioning Section)
+## 9️⃣ Why This Matters
 
-```markdown
 Healthcare financial analytics often suffer from inconsistent preprocessing and undocumented filtering logic.
 
 This project demonstrates:
@@ -173,4 +172,3 @@ This project demonstrates:
 - Transparent audit filtering
 - Reproducible analytical pipelines
 - Production-grade packaging & CI enforcement
-```
