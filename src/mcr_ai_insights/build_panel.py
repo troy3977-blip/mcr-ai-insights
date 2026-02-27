@@ -115,9 +115,7 @@ def build_panel(
     # Normalize keys
     # -----------------------------------------------------------------
     df["issuer_id"] = df["issuer_id"].astype(str).str.strip()
-    df["issuer_name"] = (
-        df["issuer_name"].astype(str) if "issuer_name" in df.columns else ""
-    )
+    df["issuer_name"] = df["issuer_name"].astype(str) if "issuer_name" in df.columns else ""
     df["state"] = df["state"].astype(str).str.upper().str.strip()
     df["market"] = df["market"].astype(str).str.strip()
 
@@ -218,9 +216,7 @@ def build_panel(
     # -----------------------------------------------------------------
     # Derived features
     # -----------------------------------------------------------------
-    df["ppi_hospitals_yoy"] = pd.to_numeric(
-        df.get("ppi_hospitals_yoy"), errors="coerce"
-    )
+    df["ppi_hospitals_yoy"] = pd.to_numeric(df.get("ppi_hospitals_yoy"), errors="coerce")
     df["premium_yoy_lag1"] = pd.to_numeric(df["premium_yoy_lag1"], errors="coerce")
 
     df["pricing_gap_hosp"] = df["ppi_hospitals_yoy"] - df["premium_yoy_lag1"]
