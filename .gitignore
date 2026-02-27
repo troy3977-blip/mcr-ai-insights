@@ -1,20 +1,33 @@
-cat >> .gitignore << 'EOF'
-# data artifacts
-data/
-data/raw/
-data/data_processed/
-*.parquet
-*.zip
-
-# python
+# Python
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
 *.pyd
+*.so
+*.egg-info/
+dist/
+build/
 .pytest_cache/
+.mypy_cache/
 .ruff_cache/
-.venv/
 
-# secrets
+# Environments
 .env
-EOF
+.venv/
+venv/
+ENV/
+env/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Data (project-specific)
+data/raw/
+data/processed/
+*.parquet
+
+# Logs / temp
+*.log
+tmp/
