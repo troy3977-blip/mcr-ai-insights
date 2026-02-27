@@ -118,7 +118,7 @@ The stable panel output supports:
 
 ## Usage
 
-### Build panel (no inflation)
+## Build panel (no inflation)
 
 ```bash
 mcr-ai --no-inflation
@@ -147,10 +147,13 @@ MLR rows: 10,504
 3) Pulling CPI/PPI from FRED...
 4) Building final panel + features...
 Wrote: data/processed/panel.parquet rows=10,001
+```
+
+---
 
 ## 8️⃣ Testing and CI
 
-# Quality Controls
+## Quality Controls
 
 - Ruff linting & formatting
 - Pytest validation of MCR logic and panel schema
