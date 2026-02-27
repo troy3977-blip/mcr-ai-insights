@@ -4,6 +4,7 @@ import pandas as pd
 
 FRED_OBS = "https://api.stlouisfed.org/fred/series/observations"
 
+
 def fetch_series(series_id: str, api_key: str) -> pd.DataFrame:
     params = {
         "series_id": series_id,
@@ -19,15 +20,21 @@ def fetch_series(series_id: str, api_key: str) -> pd.DataFrame:
     df = df.dropna(subset=["value"])
     return df
 
+
 def annualize(df: pd.DataFrame, name: str) -> pd.DataFrame:
     # Annual average of monthly index
     out = df.copy()
     out["year"] = out["date"].dt.year.astype("Int64")
-    out = out.groupby("year", as_index=False)["value"].mean().rename(columns={"value": name})
+    out = (
+        out.groupby("year", as_index=False)["value"]
+        .mean()
+        .rename(columns={"value": name})
+    )
     out = out.sort_values("year")
     out[f"{name}_yoy"] = out[name].pct_change()
     out[f"{name}_3yr_cum"] = out[name] / out[name].shift(3) - 1
     return out
+
 
 def build_inflation(api_key: str) -> pd.DataFrame:
     # Series IDs (official pages):

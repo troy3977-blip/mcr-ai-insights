@@ -112,7 +112,9 @@ def _pick_fact_csv(zf: zipfile.ZipFile, zip_name: str) -> str:
     for n in names:
         if Path(n).name.lower() == PART12_CSV.lower():
             return n
-    raise KeyError(f"Expected fact file '{PART12_CSV}' not found in {zip_name}. members={names}")
+    raise KeyError(
+        f"Expected fact file '{PART12_CSV}' not found in {zip_name}. members={names}"
+    )
 
 
 def _pick_dims_csv(zf: zipfile.ZipFile, zip_name: str, *, exclude_member: str) -> str:
@@ -127,6 +129,7 @@ def _pick_dims_csv(zf: zipfile.ZipFile, zip_name: str, *, exclude_member: str) -
 
     issuer_like = {"issuer_id", "hios_issuer_id", "hiosissuerid", "issuerid"}
     year_like = {"reporting_year", "mlr_reporting_year", "mlr_year", "report_year"}
+
     # NOTE: header uses business_state / domiciliary_state, not "state"
     def score_cols(cols: set[str]) -> int:
         s = 0
@@ -134,7 +137,11 @@ def _pick_dims_csv(zf: zipfile.ZipFile, zip_name: str, *, exclude_member: str) -
             s += 5
         if cols & issuer_like:
             s += 4
-        if any("state" in c for c in cols) or ("business_state" in cols) or ("domiciliary_state" in cols):
+        if (
+            any("state" in c for c in cols)
+            or ("business_state" in cols)
+            or ("domiciliary_state" in cols)
+        ):
             s += 3
         if cols & year_like:
             s += 3
@@ -235,7 +242,9 @@ def build_mlr_panel(
 
         # fact keys
         id_fact = _pick(fact, zp.name, "mr_submission_template_id")
-        row_code_col = _pick(fact, zp.name, "row_lookup_code", "lookup_code", "row_code")
+        row_code_col = _pick(
+            fact, zp.name, "row_lookup_code", "lookup_code", "row_code"
+        )
 
         # dims keys
         id_dims = _pick(dims, zp.name, "mr_submission_template_id")
@@ -267,17 +276,29 @@ def build_mlr_panel(
                 break
 
         issuer_name_col = None
-        for c in ("company_name", "issuer_name", "issuer_legal_name", "legal_entity_name", "dba_marketing_name"):
+        for c in (
+            "company_name",
+            "issuer_name",
+            "issuer_legal_name",
+            "legal_entity_name",
+            "dba_marketing_name",
+        ):
             if c in dims.columns:
                 issuer_name_col = c
                 break
 
         # join dims onto fact
-        dims_keep = [id_dims, issuer_id_col, state_col] + ([issuer_name_col] if issuer_name_col else [])
+        dims_keep = [id_dims, issuer_id_col, state_col] + (
+            [issuer_name_col] if issuer_name_col else []
+        )
         if year_col:
             dims_keep.append(year_col)
 
-        dims2 = dims[dims_keep].copy().rename(columns={id_dims: "mr_submission_template_id"})
+        dims2 = (
+            dims[dims_keep]
+            .copy()
+            .rename(columns={id_dims: "mr_submission_template_id"})
+        )
         if not year_col:
             dims2["year"] = zip_year
             year_col_use = "year"
@@ -315,12 +336,22 @@ def build_mlr_panel(
         ]
         if include_large_group:
             try:
-                market_cols.append(("Large Group", _pick_market_value_col(fact, zp.name, "large_group")))
+                market_cols.append(
+                    (
+                        "Large Group",
+                        _pick_market_value_col(fact, zp.name, "large_group"),
+                    )
+                )
             except KeyError:
                 pass
 
         # pivot keys
-        base_keys = ["mr_submission_template_id", issuer_id_col, state_col, year_col_use]
+        base_keys = [
+            "mr_submission_template_id",
+            issuer_id_col,
+            state_col,
+            year_col_use,
+        ]
         if issuer_name_col:
             base_keys.insert(2, issuer_name_col)
 
@@ -328,15 +359,12 @@ def build_mlr_panel(
             sub = merged[base_keys + [row_code_col, value_col]].copy()
             sub[value_col] = pd.to_numeric(sub[value_col], errors="coerce")
 
-            wide = (
-                sub.pivot_table(
-                    index=base_keys,
-                    columns=row_code_col,
-                    values=value_col,
-                    aggfunc="first",
-                )
-                .reset_index()
-            )
+            wide = sub.pivot_table(
+                index=base_keys,
+                columns=row_code_col,
+                values=value_col,
+                aggfunc="first",
+            ).reset_index()
 
             if PREMIUM_CODE not in wide.columns:
                 raise KeyError(
@@ -352,11 +380,17 @@ def build_mlr_panel(
             out = pd.DataFrame(
                 {
                     "issuer_id": wide[issuer_id_col].astype(str).str.strip(),
-                    "issuer_name": wide[issuer_name_col].astype(str).str.strip() if issuer_name_col else "",
+                    "issuer_name": wide[issuer_name_col].astype(str).str.strip()
+                    if issuer_name_col
+                    else "",
                     "state": wide[state_col].astype(str).str.upper().str.strip(),
                     "market": market_name,
-                    "year": pd.to_numeric(wide[year_col_use], errors="coerce").astype("Int64"),
-                    "earned_premium": pd.to_numeric(wide[PREMIUM_CODE], errors="coerce"),
+                    "year": pd.to_numeric(wide[year_col_use], errors="coerce").astype(
+                        "Int64"
+                    ),
+                    "earned_premium": pd.to_numeric(
+                        wide[PREMIUM_CODE], errors="coerce"
+                    ),
                     "incurred_claims": pd.to_numeric(wide[claim_code], errors="coerce"),
                 }
             )

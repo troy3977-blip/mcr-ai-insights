@@ -12,6 +12,7 @@ from .mcr import compute_mcr
 # Diagnostics
 # ---------------------------------------------------------------------
 
+
 def _audit_drops(
     df: pd.DataFrame,
     *,
@@ -41,6 +42,7 @@ def _audit_drops(
     print(f"  rows w/ NaN incurred_claims: {n_bad_cl:,}")
     print(f"  rows w/ earned_premium <= {min_premium}: {n_le_minprem:,}")
     print(f"  rows w/ incurred_claims < 0 (before clamp): {n_neg_claims:,}")
+    print(f"  rows w/ NaN raw mcr: {n_bad_mcr:,}")
     if mcr_cap is not None:
         print(f"  rows w/ raw mcr > {mcr_cap}: {n_mcr_cap:,}")
 
@@ -50,13 +52,29 @@ def _audit_drops(
 # ---------------------------------------------------------------------
 
 EXPECTED_OUTPUT_COLS = [
-    "issuer_id", "issuer_name", "state", "market", "year",
-    "earned_premium", "incurred_claims", "log_premium", "mcr",
-    "baseline_mcr", "mcr_delta",
-    "premium_yoy", "premium_yoy_lag1", "premium_yoy_lag2",
-    "cpi_medical", "cpi_medical_yoy", "cpi_medical_3yr_cum",
-    "ppi_hospitals", "ppi_hospitals_yoy", "ppi_hospitals_3yr_cum",
-    "ppi_physician", "ppi_physician_yoy", "ppi_physician_3yr_cum",
+    "issuer_id",
+    "issuer_name",
+    "state",
+    "market",
+    "year",
+    "earned_premium",
+    "incurred_claims",
+    "log_premium",
+    "mcr",
+    "baseline_mcr",
+    "mcr_delta",
+    "premium_yoy",
+    "premium_yoy_lag1",
+    "premium_yoy_lag2",
+    "cpi_medical",
+    "cpi_medical_yoy",
+    "cpi_medical_3yr_cum",
+    "ppi_hospitals",
+    "ppi_hospitals_yoy",
+    "ppi_hospitals_3yr_cum",
+    "ppi_physician",
+    "ppi_physician_yoy",
+    "ppi_physician_3yr_cum",
     "pricing_gap_hosp",
 ]
 
@@ -64,6 +82,7 @@ EXPECTED_OUTPUT_COLS = [
 # ---------------------------------------------------------------------
 # Main builder
 # ---------------------------------------------------------------------
+
 
 def build_panel(
     mlr: pd.DataFrame,
@@ -98,9 +117,7 @@ def build_panel(
     # -----------------------------------------------------------------
     df["issuer_id"] = df["issuer_id"].astype(str).str.strip()
     df["issuer_name"] = (
-        df["issuer_name"].astype(str)
-        if "issuer_name" in df.columns
-        else ""
+        df["issuer_name"].astype(str) if "issuer_name" in df.columns else ""
     )
     df["state"] = df["state"].astype(str).str.upper().str.strip()
     df["market"] = df["market"].astype(str).str.strip()
@@ -170,9 +187,7 @@ def build_panel(
     # -----------------------------------------------------------------
     # Premium YoY + lags
     # -----------------------------------------------------------------
-    df = df.sort_values(
-        ["issuer_id", "state", "market", "year"]
-    ).copy()
+    df = df.sort_values(["issuer_id", "state", "market", "year"]).copy()
 
     g = df.groupby(["issuer_id", "state", "market"], sort=False)
 
@@ -189,9 +204,15 @@ def build_panel(
         df = df.merge(infl2, on="year", how="left")
     else:
         for c in [
-            "cpi_medical", "cpi_medical_yoy", "cpi_medical_3yr_cum",
-            "ppi_hospitals", "ppi_hospitals_yoy", "ppi_hospitals_3yr_cum",
-            "ppi_physician", "ppi_physician_yoy", "ppi_physician_3yr_cum",
+            "cpi_medical",
+            "cpi_medical_yoy",
+            "cpi_medical_3yr_cum",
+            "ppi_hospitals",
+            "ppi_hospitals_yoy",
+            "ppi_hospitals_3yr_cum",
+            "ppi_physician",
+            "ppi_physician_yoy",
+            "ppi_physician_3yr_cum",
         ]:
             df[c] = pd.NA
 
@@ -201,13 +222,9 @@ def build_panel(
     df["ppi_hospitals_yoy"] = pd.to_numeric(
         df.get("ppi_hospitals_yoy"), errors="coerce"
     )
-    df["premium_yoy_lag1"] = pd.to_numeric(
-        df["premium_yoy_lag1"], errors="coerce"
-    )
+    df["premium_yoy_lag1"] = pd.to_numeric(df["premium_yoy_lag1"], errors="coerce")
 
-    df["pricing_gap_hosp"] = (
-        df["ppi_hospitals_yoy"] - df["premium_yoy_lag1"]
-    )
+    df["pricing_gap_hosp"] = df["ppi_hospitals_yoy"] - df["premium_yoy_lag1"]
 
     # -----------------------------------------------------------------
     # Enforce schema
