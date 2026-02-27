@@ -70,7 +70,7 @@ def export_panel(
 
     # ----------------------------------------
     # 2) Year-relative premium weight (w_year): premium / median(premium) per year
-    # median(premium_weight_year) per year ~= 1 (since global median is used as denominator), so w_year is roughly comparable across years
+    # median(premium_weight_year) per year ~= 1 (median is used as denominator)
     # ----------------------------------------
     out["year"] = pd.to_numeric(out["year"], errors="coerce").astype("Int64")
 
@@ -85,7 +85,7 @@ def export_panel(
     out["w_year"] = out["premium_weight_year"].clip(lower=0.0, upper=float(w_cap))
 
     # ----------------------------------------
-    # 3) Stable subset (min distinct years): issuer/state/market combinations with at least min_years distinct years of data
+    # 3) Stable subset (min distinct years): issuer/state/market combinations
     # ----------------------------------------
     grp = out.groupby(["issuer_id", "state", "market"], dropna=False)
     years_n = grp["year"].nunique().rename("n_years").reset_index()

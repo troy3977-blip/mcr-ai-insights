@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import re
 import zipfile
+from collections.abc import Iterable
 from pathlib import Path
 
 import pandas as pd
@@ -10,7 +11,9 @@ import requests
 from bs4 import BeautifulSoup
 from rich import print
 
-CMS_MLR_PAGE = "https://www.cms.gov/marketplace/resources/data/medical-loss-ratio-data-systems-resources"
+CMS_MLR_PAGE = (
+    "https://www.cms.gov/marketplace/resources/data/medical-loss-ratio-data-systems-resources"
+)
 
 HEADER_CSV = "MR_Submission_Template_Header.csv"
 PART12_CSV = "Part1_2_Summary_Data_Premium_Claims.csv"
@@ -111,9 +114,7 @@ def _pick_fact_csv(zf: zipfile.ZipFile, zip_name: str) -> str:
     for n in names:
         if Path(n).name.lower() == PART12_CSV.lower():
             return n
-    raise KeyError(
-        f"Expected fact file '{PART12_CSV}' not found in {zip_name}. members={names}"
-    )
+    raise KeyError(f"Expected fact file '{PART12_CSV}' not found in {zip_name}. members={names}")
 
 
 def _pick_dims_csv(zf: zipfile.ZipFile, zip_name: str, *, exclude_member: str) -> str:
@@ -241,9 +242,7 @@ def build_mlr_panel(
 
         # fact keys
         id_fact = _pick(fact, zp.name, "mr_submission_template_id")
-        row_code_col = _pick(
-            fact, zp.name, "row_lookup_code", "lookup_code", "row_code"
-        )
+        row_code_col = _pick(fact, zp.name, "row_lookup_code", "lookup_code", "row_code")
 
         # dims keys
         id_dims = _pick(dims, zp.name, "mr_submission_template_id")
@@ -293,11 +292,7 @@ def build_mlr_panel(
         if year_col:
             dims_keep.append(year_col)
 
-        dims2 = (
-            dims[dims_keep]
-            .copy()
-            .rename(columns={id_dims: "mr_submission_template_id"})
-        )
+        dims2 = dims[dims_keep].copy().rename(columns={id_dims: "mr_submission_template_id"})
         if not year_col:
             dims2["year"] = zip_year
             year_col_use = "year"
@@ -365,15 +360,13 @@ def build_mlr_panel(
                 aggfunc="first",
             ).reset_index()
 
-            if PREMIUM_CODE not in wide.columns:
-                raise KeyError(
-                    f"Missing premium row code '{PREMIUM_CODE}' after pivot for {zp.name} ({market_name}). "
-                    f"Available={list(wide.columns)[:80]}..."
-                )
             if claim_code not in wide.columns:
                 raise KeyError(
-                    f"Missing claim row code '{claim_code}' after pivot for {zp.name} ({market_name}). "
-                    f"Available={list(wide.columns)[:80]}..."
+                    
+                        f"Missing claim row code '{claim_code}' after pivot for "
+                        f"{zp.name} ({market_name}). "
+                        f"Available={list(wide.columns)[:80]}..."
+                    
                 )
 
             out = pd.DataFrame(
@@ -384,12 +377,8 @@ def build_mlr_panel(
                     else "",
                     "state": wide[state_col].astype(str).str.upper().str.strip(),
                     "market": market_name,
-                    "year": pd.to_numeric(wide[year_col_use], errors="coerce").astype(
-                        "Int64"
-                    ),
-                    "earned_premium": pd.to_numeric(
-                        wide[PREMIUM_CODE], errors="coerce"
-                    ),
+                    "year": pd.to_numeric(wide[year_col_use], errors="coerce").astype("Int64"),
+                    "earned_premium": pd.to_numeric(wide[PREMIUM_CODE], errors="coerce"),
                     "incurred_claims": pd.to_numeric(wide[claim_code], errors="coerce"),
                 }
             )
