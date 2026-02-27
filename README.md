@@ -114,9 +114,12 @@ The stable panel output supports:
 
 ## 6️⃣ Usage
 
-```markdown
+---
 
-## Build panel (no inflation)
+## Usage
+
+### Build panel (no inflation)
+
 ```bash
 mcr-ai --no-inflation
 ```
