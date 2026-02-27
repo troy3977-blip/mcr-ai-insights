@@ -61,9 +61,7 @@ def export_panel(
     # -----------------------------
     # 1) Global premium weight (w):  premium / median(premium)
     # -----------------------------
-    prem = pd.to_numeric(out["earned_premium"], errors="coerce").replace(
-        [np.inf, -np.inf], np.nan
-    )
+    prem = pd.to_numeric(out["earned_premium"], errors="coerce").replace([np.inf, -np.inf], np.nan)
     global_med = _safe_median(prem)
     out["premium_weight"] = prem / global_med
     out["w"] = out["premium_weight"].clip(lower=0.0, upper=float(w_cap))

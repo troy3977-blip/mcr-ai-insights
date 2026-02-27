@@ -362,11 +362,9 @@ def build_mlr_panel(
 
             if claim_code not in wide.columns:
                 raise KeyError(
-                    
-                        f"Missing claim row code '{claim_code}' after pivot for "
-                        f"{zp.name} ({market_name}). "
-                        f"Available={list(wide.columns)[:80]}..."
-                    
+                    f"Missing claim row code '{claim_code}' after pivot for "
+                    f"{zp.name} ({market_name}). "
+                    f"Available={list(wide.columns)[:80]}..."
                 )
 
             out = pd.DataFrame(
