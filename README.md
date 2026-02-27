@@ -112,8 +112,6 @@ The stable panel output supports:
 - Variance and volatility modeling
 - Cross-state structural comparisons
 
-## 6️⃣ Usage
-
 ---
 
 ## Usage
