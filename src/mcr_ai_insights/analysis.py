@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal, Sequence
+from typing import Literal
 
 import numpy as np
 import pandas as pd
@@ -204,11 +205,7 @@ def premium_exposure_by_state(
 
     def _pw_mcr(g: pd.DataFrame) -> float:
         denom = float(g["earned_premium"].sum())
-        return (
-            float((g["mcr"] * g["earned_premium"]).sum() / denom)
-            if denom > 0
-            else float("nan")
-        )
+        return float((g["mcr"] * g["earned_premium"]).sum() / denom) if denom > 0 else float("nan")
 
     pw_rows: list[dict[str, object]] = []
     for state, g in at_risk.groupby("state", dropna=False):
@@ -216,9 +213,7 @@ def premium_exposure_by_state(
 
     pw = pd.DataFrame(pw_rows)
 
-    out = premium_total.merge(risk_sum, on="state", how="left").merge(
-        pw, on="state", how="left"
-    )
+    out = premium_total.merge(risk_sum, on="state", how="left").merge(pw, on="state", how="left")
     out["premium_at_risk"] = out["premium_at_risk"].fillna(0.0)
     out["share_premium_at_risk"] = np.where(
         out["premium_total"] > 0,
@@ -262,9 +257,7 @@ def top_at_risk_report(
     years: Sequence[int] | None = None,
     top_n: int = 25,
 ) -> pd.DataFrame:
-    cfg = ThresholdRiskConfig(
-        threshold=threshold, band=band, market=market, years=years
-    )
+    cfg = ThresholdRiskConfig(threshold=threshold, band=band, market=market, years=years)
     at_risk = identify_mlr_threshold_risk(df, cfg)
 
     cols = [

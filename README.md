@@ -8,19 +8,24 @@
 
 ## 2️⃣ Executive Summary
 
-## Overview
+## `mcr-ai-insights` is a production-grade healthcare analytics pipeline that transforms raw CMS (MLR/MCR) PUF's into a structured, issuer–state–market–year decision-support panel
 
-`mcr-ai-insights` is a reproducible Python pipeline that converts raw CMS Medical Loss Ratio (MLR) public-use files into a deterministic issuer–state–market–year analytical panel.
+- The system supports regulatory monitoring, pricing adequacy analysis, and ACA policy impact modeling through:
+- Deterministic normalization of CMS MLR filings
+- Audit-transparent filtering and premium thresholds
+- Guardrailed Medical Cost Ratio (MCR) computation
+- Optional macroeconomic normalization (CPI / PPI via FRED)
+- Stable longitudinal panel construction for issuer-level analysis
+- Threshold proximity and risk-band analytics
 
-The system:
+The resulting dataset enables:
 
-- Downloads and normalizes CMS MLR ZIP files
-- Applies audit filtering and premium thresholds
-- Computes Medical Loss Ratios (MCR) with guardrails
-- Optionally integrates CPI/PPI inflation from FRED
-- Produces modeling-ready and stable panel datasets
+- Identification of insurers operating near regulatory MLR boundaries
+- Premium-weighted exposure analysis by state and market
+- Scenario-based stress testing of pricing and utilization shifts
+- Longitudinal issuer benchmarking
 
-This project emphasizes reproducibility, data contracts, and production-grade packaging.
+This repository emphasizes reproducibility, explicit data contracts, CI-enforced validation, and production-grade packaging.
 
 ## 3️⃣ Architecture
 
@@ -85,7 +90,7 @@ Requires Python 3.10+.
 
 ## 6️⃣ Usage Examples
 
-1.; Subsidy Expansion or Reduction
+1. Subsidy Expansion or Reduction
 
 Changes to premium tax credits (e.g., ARPA enhancements or sunset scenarios) may alter enrollment composition and average risk levels.  
 Using the issuer-level MCR panel, analysts can:
@@ -94,7 +99,7 @@ Using the issuer-level MCR panel, analysts can:
 - Evaluate changes in premium growth relative to claims growth
 - Identify state-level heterogeneity in impact
 
-2.; Medical Loss Ratio (MLR) Rebate Rule Adjustments
+2. Medical Loss Ratio (MLR) Rebate Rule Adjustments
 
 If regulatory thresholds or rebate calculations change, insurers may alter pricing or benefit design strategies.  
 This dataset enables:
@@ -103,7 +108,7 @@ This dataset enables:
 - Identification of issuers operating near regulatory thresholds
 - Sensitivity modeling under alternate MCR caps
 
-3.; Risk Adjustment or Market Stabilization Policy Changes
+3. Risk Adjustment or Market Stabilization Policy Changes
 
 Modifications to risk corridors, reinsurance programs, or adjustment formulas affect claims volatility and pricing adequacy.  
 The stable panel output supports:
@@ -136,18 +141,37 @@ mcr-ai export --min-years 3 --w-cap 10.0
 
 ---
 
-## 7️⃣ Example CLI Output
+---
 
-```markdown
-1) Downloading CMS MLR ZIPs (cached in data/raw/)...
-2) Building MLR panel (issuer-state-market-year)...
-MLR rows: 10,504
-3) Pulling CPI/PPI from FRED...
-4) Building final panel + features...
-Wrote: data/processed/panel.parquet rows=10,001
-```
+## 7️⃣ Analytical Case Study: ACA 80% MLR Threshold Risk
+
+### Business Question
+
+Which insurers are operating near the ACA 80% Medical Loss Ratio (MLR) threshold in the Individual market, and where is premium exposure concentrated?
+
+Under ACA rules, issuers below the minimum MLR threshold may owe rebates.  
+Operating too close to the boundary increases regulatory and pricing risk.
 
 ---
+
+### Identifying Issuers Near the Threshold (±2pp)
+
+```python
+import pandas as pd
+from mcr_ai_insights.analysis import top_at_risk_report
+
+df = pd.read_parquet("data/processed/panel_model.parquet")
+
+report = top_at_risk_report(
+    df,
+    threshold=0.80,
+    band=0.02,
+    market="Individual",
+    top_n=25,
+)
+
+print(report.head(10))
+```
 
 ## 8️⃣ Testing and CI
 
