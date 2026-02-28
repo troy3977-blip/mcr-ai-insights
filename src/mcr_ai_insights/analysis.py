@@ -1,15 +1,13 @@
-# src/mcr_ai_insights/analysis.py
 from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Literal, Sequence
+from typing import Literal, Sequence
 
 import numpy as np
 import pandas as pd
 
 Market = Literal["Individual", "Small Group", "Large Group"]
-
 
 REQUIRED_COLS_BASE: tuple[str, ...] = (
     "issuer_id",
@@ -20,45 +18,27 @@ REQUIRED_COLS_BASE: tuple[str, ...] = (
     "mcr",
 )
 
-OPTIONAL_COLS: tuple[str, ...] = (
-    "issuer_name",
-    "incurred_claims",
-    "w",
-    "w_year",
-)
-
 
 @dataclass(frozen=True)
 class ThresholdRiskConfig:
-    """Configuration for identifying issuers near an MLR threshold."""
-
     threshold: float = 0.80
-    band: float = 0.02  # +/- band around threshold (e.g., 2 percentage points)
+    band: float = 0.02
     market: str | None = "Individual"
     min_earned_premium: float | None = None
     years: Sequence[int] | None = None
 
 
-def _ensure_columns(df: pd.DataFrame, required: Iterable[str]) -> None:
+def _ensure_columns(df: pd.DataFrame, required: Sequence[str]) -> None:
     missing = [c for c in required if c not in df.columns]
     if missing:
         raise ValueError(f"Missing required columns: {missing}")
 
 
 def load_panel(path: str | Path) -> pd.DataFrame:
-    """
-    Load a parquet panel artifact.
-
-    Typical inputs:
-      - data/processed/panel.parquet
-      - data/processed/panel_model.parquet
-      - data/processed/panel_stable.parquet
-    """
     p = Path(path)
     if not p.exists():
         raise FileNotFoundError(f"Panel not found: {p}")
-    df = pd.read_parquet(p)
-    return df
+    return pd.read_parquet(p)
 
 
 def filter_panel(
@@ -69,7 +49,6 @@ def filter_panel(
     years: Sequence[int] | None = None,
     min_earned_premium: float | None = None,
 ) -> pd.DataFrame:
-    """Convenience filters for common slices."""
     out = df.copy()
 
     if market is not None:
@@ -90,16 +69,7 @@ def filter_panel(
     return out
 
 
-def add_threshold_features(
-    df: pd.DataFrame,
-    threshold: float = 0.80,
-) -> pd.DataFrame:
-    """
-    Add standard threshold diagnostics:
-      - distance_to_threshold = mcr - threshold
-      - abs_distance_to_threshold = |mcr - threshold|
-      - at_or_above_threshold = mcr >= threshold
-    """
+def add_threshold_features(df: pd.DataFrame, threshold: float = 0.80) -> pd.DataFrame:
     _ensure_columns(df, ("mcr",))
     out = df.copy()
     out["distance_to_threshold"] = out["mcr"] - float(threshold)
@@ -110,26 +80,26 @@ def add_threshold_features(
 
 def identify_mlr_threshold_risk(
     df: pd.DataFrame,
-    config: ThresholdRiskConfig = ThresholdRiskConfig(),
+    config: ThresholdRiskConfig | None = None,
 ) -> pd.DataFrame:
     """
-    Identify issuer/state/market/year rows within +/- band of the MLR threshold.
-
-    Returns a filtered dataframe with added threshold diagnostic columns, sorted by
-    (abs_distance_to_threshold asc, earned_premium desc).
+    Return rows within +/- band of the threshold for the chosen market/years.
+    Sorted by closeness to threshold, then by premium exposure.
     """
     _ensure_columns(df, REQUIRED_COLS_BASE)
 
+    cfg = config or ThresholdRiskConfig()
+
     out = filter_panel(
         df,
-        market=config.market,
-        years=config.years,
-        min_earned_premium=config.min_earned_premium,
+        market=cfg.market,
+        years=cfg.years,
+        min_earned_premium=cfg.min_earned_premium,
     )
-    out = add_threshold_features(out, threshold=config.threshold)
 
-    band = float(config.band)
-    out = out.loc[out["abs_distance_to_threshold"] <= band].copy()
+    out = add_threshold_features(out, threshold=cfg.threshold)
+
+    out = out.loc[out["abs_distance_to_threshold"] <= float(cfg.band)].copy()
 
     out = out.sort_values(
         by=["abs_distance_to_threshold", "earned_premium"],
@@ -145,17 +115,9 @@ def summarize_threshold_risk(
     group_by: Sequence[str] = ("issuer_id", "state", "market"),
 ) -> pd.DataFrame:
     """
-    Summarize risk proximity and exposure for at-risk rows.
-
-    Metrics:
-      - n_rows, years_min/max
-      - premium_sum
-      - premium_weighted_mcr
-      - min/median/max mcr
-      - min abs_distance_to_threshold
+    Summarize proximity to threshold and premium exposure by group.
     """
     _ensure_columns(df_at_risk, REQUIRED_COLS_BASE)
-
     df_feat = add_threshold_features(df_at_risk, threshold=threshold)
 
     keys = list(group_by)
@@ -167,13 +129,18 @@ def summarize_threshold_risk(
         denom = float(w.sum())
         return float((x * w).sum() / denom) if denom > 0 else float("nan")
 
-    rows = []
+    rows: list[dict[str, object]] = []
     for k, g in grp:
-        g = g.copy()
+        if isinstance(k, tuple):
+            key_map = {keys[i]: k[i] for i in range(len(keys))}
+        else:
+            key_map = {keys[0]: k}
+
         premium_sum = float(g["earned_premium"].sum())
+
         rows.append(
             {
-                **{keys[i]: k[i] for i in range(len(keys))} if isinstance(k, tuple) else {keys[0]: k},
+                **key_map,
                 "n_rows": int(len(g)),
                 "year_min": int(pd.to_numeric(g["year"], errors="coerce").min()),
                 "year_max": int(pd.to_numeric(g["year"], errors="coerce").max()),
@@ -205,13 +172,7 @@ def premium_exposure_by_state(
     years: Sequence[int] | None = None,
 ) -> pd.DataFrame:
     """
-    State-level view: premium exposure within a threshold band.
-
-    Returns a dataframe with:
-      - premium_total
-      - premium_at_risk (within band)
-      - share_premium_at_risk
-      - premium_weighted_mcr_at_risk
+    State-level premium exposure within a threshold band.
     """
     _ensure_columns(df, REQUIRED_COLS_BASE)
 
@@ -226,7 +187,6 @@ def premium_exposure_by_state(
     )
 
     at_risk = base.loc[base["abs_distance_to_threshold"] <= float(band)].copy()
-
     if at_risk.empty:
         out = premium_total.assign(
             premium_at_risk=0.0,
@@ -244,16 +204,21 @@ def premium_exposure_by_state(
 
     def _pw_mcr(g: pd.DataFrame) -> float:
         denom = float(g["earned_premium"].sum())
-        return float((g["mcr"] * g["earned_premium"]).sum() / denom) if denom > 0 else float("nan")
+        return (
+            float((g["mcr"] * g["earned_premium"]).sum() / denom)
+            if denom > 0
+            else float("nan")
+        )
 
-    pw = (
-        at_risk.groupby("state", dropna=False)
-        .apply(_pw_mcr, include_groups=False)
-        .rename("premium_weighted_mcr_at_risk")
-        .reset_index()
+    pw_rows: list[dict[str, object]] = []
+    for state, g in at_risk.groupby("state", dropna=False):
+        pw_rows.append({"state": state, "premium_weighted_mcr_at_risk": _pw_mcr(g)})
+
+    pw = pd.DataFrame(pw_rows)
+
+    out = premium_total.merge(risk_sum, on="state", how="left").merge(
+        pw, on="state", how="left"
     )
-
-    out = premium_total.merge(risk_sum, on="state", how="left").merge(pw, on="state", how="left")
     out["premium_at_risk"] = out["premium_at_risk"].fillna(0.0)
     out["share_premium_at_risk"] = np.where(
         out["premium_total"] > 0,
@@ -272,20 +237,8 @@ def simulate_policy_scenario(
     mcr_cap: float = 5.0,
 ) -> pd.DataFrame:
     """
-    Simple scenario tool to stress MCR under policy-driven shifts.
-
-    Examples:
-      - Subsidy expansion may increase enrollment and shift premium mix:
-        premium_multiplier > 1 (if average premium increases) or < 1.
-      - Utilization shock / risk mix shift:
-        claims_multiplier > 1.
-
-    MCR is recomputed as:
+    Simple stress test:
       mcr_scn = (incurred_claims * claims_multiplier) / (earned_premium * premium_multiplier)
-
-    Requirements:
-      - 'earned_premium'
-      - 'incurred_claims' (if not present, raises)
     """
     _ensure_columns(df, ("earned_premium", "incurred_claims"))
 
@@ -294,11 +247,9 @@ def simulate_policy_scenario(
     clm = out["incurred_claims"].astype(float) * float(claims_multiplier)
 
     mcr_scn = clm / prem.replace({0.0: np.nan})
-    mcr_scn = mcr_scn.clip(lower=0.0, upper=float(mcr_cap))
-
     out["earned_premium_scn"] = prem
     out["incurred_claims_scn"] = clm
-    out["mcr_scn"] = mcr_scn
+    out["mcr_scn"] = mcr_scn.clip(lower=0.0, upper=float(mcr_cap))
 
     return out
 
@@ -311,19 +262,8 @@ def top_at_risk_report(
     years: Sequence[int] | None = None,
     top_n: int = 25,
 ) -> pd.DataFrame:
-    """
-    Convenience: return a compact top-N report for issuers nearest threshold,
-    weighted by premium exposure.
-
-    Output columns:
-      issuer_id, state, market, year, earned_premium, mcr,
-      distance_to_threshold, abs_distance_to_threshold
-    """
     cfg = ThresholdRiskConfig(
-        threshold=threshold,
-        band=band,
-        market=market,
-        years=years,
+        threshold=threshold, band=band, market=market, years=years
     )
     at_risk = identify_mlr_threshold_risk(df, cfg)
 
@@ -337,7 +277,6 @@ def top_at_risk_report(
         "distance_to_threshold",
         "abs_distance_to_threshold",
     ]
-    # keep optional identifiers if present
     if "issuer_name" in at_risk.columns:
         cols.insert(1, "issuer_name")
 

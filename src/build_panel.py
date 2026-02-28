@@ -33,6 +33,7 @@ def _audit_drops(
 
     mcr_raw = cl / ep.replace({0.0: np.nan})
     n_bad_mcr = int(mcr_raw.isna().sum()) if total else 0
+    # e.g., optionally: diag["n_bad_mcr"] = n_bad_mcr
     n_mcr_cap = int((mcr_raw > mcr_cap).sum()) if (mcr_cap is not None) else 0
 
     print("[cyan]Step 4 audit:[/cyan]")
