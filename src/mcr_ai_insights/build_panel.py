@@ -4,9 +4,8 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from .quality import require_columns, basic_mcr_checks
 from .mcr import compute_mcr
-
+from .quality import basic_mcr_checks, require_columns
 
 # ---------------------------------------------------------------------
 # Diagnostics
@@ -33,7 +32,6 @@ def _audit_drops(
 
     mcr_raw = cl / ep.replace({0.0: np.nan})
     n_bad_mcr = int(mcr_raw.isna().sum()) if total else 0
-    # e.g., optionally: diag["n_bad_mcr"] = n_bad_mcr
     n_mcr_cap = int((mcr_raw > mcr_cap).sum()) if (mcr_cap is not None) else 0
 
     print("[cyan]Step 4 audit:[/cyan]")
@@ -117,9 +115,7 @@ def build_panel(
     # Normalize keys
     # -----------------------------------------------------------------
     df["issuer_id"] = df["issuer_id"].astype(str).str.strip()
-    df["issuer_name"] = (
-        df["issuer_name"].astype(str) if "issuer_name" in df.columns else ""
-    )
+    df["issuer_name"] = df["issuer_name"].astype(str) if "issuer_name" in df.columns else ""
     df["state"] = df["state"].astype(str).str.upper().str.strip()
     df["market"] = df["market"].astype(str).str.strip()
 
@@ -220,9 +216,7 @@ def build_panel(
     # -----------------------------------------------------------------
     # Derived features
     # -----------------------------------------------------------------
-    df["ppi_hospitals_yoy"] = pd.to_numeric(
-        df.get("ppi_hospitals_yoy"), errors="coerce"
-    )
+    df["ppi_hospitals_yoy"] = pd.to_numeric(df.get("ppi_hospitals_yoy"), errors="coerce")
     df["premium_yoy_lag1"] = pd.to_numeric(df["premium_yoy_lag1"], errors="coerce")
 
     df["pricing_gap_hosp"] = df["ppi_hospitals_yoy"] - df["premium_yoy_lag1"]

@@ -1,264 +1,178 @@
 
-# 🏥 MCR AI Insights #
+# 1️⃣ mcr-ai-insights
 
-Issuer-State-Market Medical Loss Ratio Panel Builder (2017–Present)
-Production-grade data pipeline that transforms CMS Medical Loss Ratio (MLR) Public Use Files into a clean, model-ready issuer-level panel with inflation normalization, audit controls, and year-relative premium weighting.
+![CI](https://github.com/troy3977-blip/mcr-ai-insights/actions/workflows/ci.yml/badge.svg)
+![Python](https://img.shields.io/badge/python-3.10%2B-blue)
+![Lint](https://img.shields.io/badge/lint-ruff-success)
+![Tests](https://img.shields.io/badge/tests-pytest-success)
 
-## 📌 Overview ##
+## 2️⃣ Executive Summary
 
-This project ingests raw CMS MLR ZIP files and produces a structured issuer-state-market-year panel suitable for:
+## Overview
 
-- Regulatory analysis
-- Loss ratio modeling
-- Pricing strategy research
-- Market concentration studies
-- Risk-adjusted forecasting
-- Longitudinal insurer stability analysis
+`mcr-ai-insights` is a reproducible Python pipeline that converts raw CMS Medical Loss Ratio (MLR) public-use files into a deterministic issuer–state–market–year analytical panel.
 
-It solves common MLR PUF challenges:
+The system:
 
-- Fact/dimension table separation
-- Schema variation across years
-- Inconsistent row codes
-- Negative claims anomalies
-- Outlier MCR values
-- Multi-year panel stability filtering
-- Inflation normalization (CPI/PPI via FRED)
+- Downloads and normalizes CMS MLR ZIP files
+- Applies audit filtering and premium thresholds
+- Computes Medical Loss Ratios (MCR) with guardrails
+- Optionally integrates CPI/PPI inflation from FRED
+- Produces modeling-ready and stable panel datasets
 
-## 🧱 Architecture ##
+This project emphasizes reproducibility, data contracts, and production-grade packaging.
 
-CMS MLR ZIP Archives (2017--Present) │ ▼ Extract + Normalize Raw CSVs │ ▼ Fact Table: Part1_2_Summary_Data_Premium_Claims.csv │ ▼ Header Dimensions: MR_Submission_Template_Header.csv │ ▼ Issuer--State--Market--Year Analytical Panel │ ▼ Inflation Merge (FRED CPI / PPI) │ ▼ Feature Engineering + Audit Filtering │ ▼ Model-Ready Artifacts (Parquet / CSV / Feature Store)
+## 3️⃣ Architecture
 
-## 📂 Project Structure ##
+data/raw/
+    ↓
+ingest_mlr → normalization + audit filtering
+    ↓
+build_panel → feature engineering (MCR, thresholds, inflation)
+    ↓
+panel.parquet
+    ↓
+export_panel
+    ↓
+panel_model.parquet
+panel_stable.parquet
 
-mcr-ai-insights/
-│
-├── src/                         # Core application logic
-│   │
-│   ├── cli.py                   # Typer-based CLI entrypoint
-│   │                             # Orchestrates end-to-end pipeline execution
-│   │
-│   ├── ingest_mlr.py            # CMS MLR ZIP extraction & normalization
-│   │                             # Builds canonical issuer-state-market-year panel
-│   │
-│   ├── ingest_fred.py           # CPI / PPI inflation ingestion (FRED API)
-│   │                             # Produces inflation normalization layer
-│   │
-│   ├── build_panel.py           # Deterministic feature engineering
-│   │                             # Audit filtering + derived metrics
-│   │
-│   ├── export_panel.py          # Model-ready artifact generation
-│   │                             # Stable subsets + weight-ready exports
-│   │
-│   └── config.py                # Centralized configuration management
-│                                 # Paths, environment variables, API keys
-│
-├── data/
-│   │
-│   ├── raw/                     # Immutable source inputs (gitignored)
-│   │                             # CMS ZIP downloads
-│   │
-│   └── processed/               # Versioned analytical outputs
-│                                 # Parquet artifacts for modeling
-│
-├── .env                         # Optional runtime configuration (gitignored)
-│                                 # FRED_API_KEY and local overrides
-│
-├── requirements.txt             # Explicit dependency specification
-└── README.md                    # Project documentation
+## Pipeline flow
 
-| Layer          | Module            | Responsibility                    |
-| -------------- | ----------------- | --------------------------------- |
-| Interface      | `cli.py`          | Orchestration & execution control |
-| Ingestion      | `ingest_mlr.py`   | Raw CMS normalization             |
-| Macroeconomic  | `ingest_fred.py`  | Inflation index acquisition       |
-| Transformation | `build_panel.py`  | Feature engineering + audit logic |
-| Export         | `export_panel.py` | Model-ready artifact generation   |
-| Configuration  | `config.py`       | Environment + runtime settings    |
+1. Raw CMS ZIP files stored in data/raw/
+2. Normalization into issuer–state–market–year structure
+3. Deterministic filtering and feature engineering
+4. Optional inflation integration (CPI/PPI via FRED)
+5. Export to model-ready and stable analytical panels
 
-## 🚀 Quick Start ##
+## 4️⃣ Data Contracts
 
-1️⃣ Install Dependencies
-pip install -r requirements.txt
+### Required Columns (MLR Input)
 
-2️⃣ (Optional) Add FRED API Key
-Create .env:
-FRED_API_KEY=your_key_here
-
-3️⃣ Build Panel
-Single year:
-
-- python -m src.cli --start-year 2017 --end-year 2017 --diagnostics
-
-Full range:
-
-- python -m src.cli --start-year 2017 --end-year 2024
-
-Skip inflation:
-
-- python -m src.cli --no-inflation
-
-Output:
-
-- data/processed/panel.parquet
-
-4️⃣ Export Model Artifacts:
-
-- python -m src.cli export --min-years 3 --w-cap 10
-
-Outputs:
-
-- panel_model.parquet
-- panel_stable.parquet
-
-## 🔍 Audit & Data Controls ##
-
-During panel construction, automated audits flag and filter:
-
-| Check                      | Purpose                |
-| -------------------------- | ---------------------- |
-| NaN year                   | Invalid dimension join |
-| NaN premium                | Broken pivot           |
-| Negative claims            | CMS restatements       |
-| Earned premium ≤ threshold | Micro-issuer noise     |
-| Raw MCR > 5                | Extreme data artifacts |
-
-Example audit output:
-
-- input rows: 10,504
-- rows w/ incurred_claims < 0: 1,217
-- rows w/ raw mcr > 5.0: 410
-- Post-filter rows: 10,001
-
-## 📊 Feature Engineering ##
-
-Final panel includes:
-
+- issuer_id
+- issuer_name
+- state
+- market
+- year
 - earned_premium
 - incurred_claims
-- mcr (Medical Loss Ratio)
-- log_premium
-- CPI / PPI inflation adjustments
-- premium_weight (global)
-- premium_weight_year (year-relative)
-- w (capped global weight)
-- w_year (capped year-relative weight)
 
-## 🧮 Weighting Strategy ##
+### Output Schema
 
-Global Premium Weight:
+`build_panel()` enforces a deterministic output schema:
 
-- w = earned_premium / global_median
+- issuer_id
+- issuer_name
+- state
+- market
+- year
+- earned_premium
+- incurred_claims
+- mcr
+- cpi (optional)
+- ppi (optional)
+- derived features
 
-Year-Relative Weight:
+## 5️⃣ Installation
 
-- premium_weight_year = earned_premium / median(earned_premium within year)
+```bash
+git clone https://github.com/troy3977-blip/mcr-ai-insights
+cd mcr-ai-insights
+pip install -e ".[dev]"
+```
 
-Ensures:
+Requires Python 3.10+.
 
-- Median weight per year ≈ 1.0
-- Controls for macro growth effects
-- Prevents 2024 dominating 2017
-- Weights are capped at configurable w_cap.
+## 6️⃣ Usage Examples
 
-## 🏛 Stable Panel Construction ##
+1.; Subsidy Expansion or Reduction
 
-Stable subset includes issuer-state-market groups with:
+Changes to premium tax credits (e.g., ARPA enhancements or sunset scenarios) may alter enrollment composition and average risk levels.  
+Using the issuer-level MCR panel, analysts can:
 
-- '>=' min_years distinct years
-- Default: 3 years
+- Measure pre- and post-policy MCR shifts
+- Evaluate changes in premium growth relative to claims growth
+- Identify state-level heterogeneity in impact
 
-Output:
+2.; Medical Loss Ratio (MLR) Rebate Rule Adjustments
 
-- panel_stable.parquet
+If regulatory thresholds or rebate calculations change, insurers may alter pricing or benefit design strategies.  
+This dataset enables:
 
-Designed for:
+- Historical comparison of MCR distribution by market
+- Identification of issuers operating near regulatory thresholds
+- Sensitivity modeling under alternate MCR caps
 
-- Fixed-effects models
-- Panel regressions
-- Longitudinal volatility analysis
+3.; Risk Adjustment or Market Stabilization Policy Changes
 
-## ⚙️ CLI Commands ##
+Modifications to risk corridors, reinsurance programs, or adjustment formulas affect claims volatility and pricing adequacy.  
+The stable panel output supports:
 
-Build Panel:
+- Longitudinal issuer performance analysis
+- Variance and volatility modeling
+- Cross-state structural comparisons
 
-- python -m src.cli [OPTIONS]
+---
 
-Options:
+## Usage
 
-| Option                  | Description                |
-| ----------------------- | -------------------------- |
-| `--start-year`          | First reporting year       |
-| `--end-year`            | Last reporting year        |
-| `--diagnostics`         | Print ingest diagnostics   |
-| `--include-large-group` | Include Large Group market |
-| `--no-inflation`        | Skip FRED CPI/PPI          |
+## Build panel (no inflation)
 
-Export Model Artifacts:
+```bash
+mcr-ai --no-inflation
+```
 
-- python -m src.cli export
+## Build panel with inflation (FRED)
 
-Options:
+```bash
+mcr-ai --fred-api-key YOUR_KEY
+```
 
-| Option         | Description            |
-| -------------- | ---------------------- |
-| `--min-years`  | Stable panel threshold |
-| `--w-cap`      | Weight cap             |
-| `--input-name` | Source parquet         |
+## Export model artifacts
 
-## 🧠 Why This Matters ##
+```bash
+mcr-ai export --min-years 3 --w-cap 10.0
+```
 
-CMS MLR PUF data is:
+---
 
-- Multi-file
-- Schema-variable
-- Row-code encoded
-- Fact/dim separated
-- Not analysis-ready
+## 7️⃣ Example CLI Output
 
-This project transforms it into:
+```markdown
+1) Downloading CMS MLR ZIPs (cached in data/raw/)...
+2) Building MLR panel (issuer-state-market-year)...
+MLR rows: 10,504
+3) Pulling CPI/PPI from FRED...
+4) Building final panel + features...
+Wrote: data/processed/panel.parquet rows=10,001
+```
 
-- ✔ Clean
-- ✔ Audited
-- ✔ Weighted
-- ✔ Inflation-adjusted
-- ✔ Panel-structured
-- ✔ Modeling-ready
+---
 
-## 📈 Example Use Cases ##
+## 8️⃣ Testing and CI
 
-- ✔ Insurer-level MCR forecasting
-- ✔ Risk corridor / rebate modeling
-- ✔ Market concentration analysis
-- ✔ Premium growth normalization
-- ✔ Inflation-adjusted profitability modeling
-- ✔ Actuarial panel regressions
+## Quality Controls
 
-## 🔐 Data Handling ##
+- Ruff linting & formatting
+- Pytest validation of MCR logic and panel schema
+- GitHub Actions CI on every push
 
-- Raw ZIP files not committed
-- Parquet artifacts ignored in git
-- .env excluded
-- Designed for Azure / container deployment
+Run locally:
 
-## 🛠 Production Design Principles ##
+```bash
+ruff check .
+pytest -q
+```
 
-- Idempotent downloads
-- Deterministic joins
-- Schema-robust column matching
-- Explicit anomaly filtering
-- Year-inference fallback
-- CLI-first reproducibility
-- Modeling artifacts separated from base panel
+---
 
-## 📌 Example Output Sizes (2017–2024) ##
+## 9️⃣ Why This Matters
 
-| Stage                  | Rows   |
-| ---------------------- | ------ |
-| Raw extracted          | 10,504 |
-| Post-audit filtered    | 10,001 |
-| Stable subset (≥3 yrs) | 9,359  |
+Healthcare financial analytics often suffer from inconsistent preprocessing and undocumented filtering logic.
 
-## 📄 License ##
+This project demonstrates:
 
-Internal / research use
+- Deterministic data engineering
+- Transparent audit filtering
+- Reproducible analytical pipelines
+- Production-grade packaging & CI enforcement

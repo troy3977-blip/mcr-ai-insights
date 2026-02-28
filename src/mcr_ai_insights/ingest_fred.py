@@ -1,6 +1,7 @@
 from __future__ import annotations
-import requests
+
 import pandas as pd
+import requests
 
 FRED_OBS = "https://api.stlouisfed.org/fred/series/observations"
 
@@ -25,11 +26,7 @@ def annualize(df: pd.DataFrame, name: str) -> pd.DataFrame:
     # Annual average of monthly index
     out = df.copy()
     out["year"] = out["date"].dt.year.astype("Int64")
-    out = (
-        out.groupby("year", as_index=False)["value"]
-        .mean()
-        .rename(columns={"value": name})
-    )
+    out = out.groupby("year", as_index=False)["value"].mean().rename(columns={"value": name})
     out = out.sort_values("year")
     out[f"{name}_yoy"] = out[name].pct_change()
     out[f"{name}_3yr_cum"] = out[name] / out[name].shift(3) - 1

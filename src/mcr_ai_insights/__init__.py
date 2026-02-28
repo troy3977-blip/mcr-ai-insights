@@ -1,3 +1,5 @@
-from __future__ import annotations
+from mcr_ai_insights.analysis import top_at_risk_report
 
-__all__ = []
+from . import analysis
+
+__all__ = ["analysis", "top_at_risk_report"]
